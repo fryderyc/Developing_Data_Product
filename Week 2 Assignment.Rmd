@@ -1,0 +1,52 @@
+---
+title: "Developing Data Products - Week 2 Assignment"
+author: "Frederick Cheung"
+date: "19 Aug 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(leaflet)
+library(dplyr)
+
+knitr::opts_chunk$set(echo = TRUE)
+
+conv <- function(n) {
+  sp <- strsplit(n, "-")[[1]]
+  as.numeric(sp[1]) + (as.numeric(sp[2])/60) + (as.numeric(sp[3])/3600)
+}
+
+edbData <- read.csv("./KG_EDB_20180706_2.csv",
+                    encoding = "UTF-8",
+                    stringsAsFactors = FALSE,
+                    header = TRUE,
+                    fill = TRUE,
+                    sep = ",",
+                    skipNul = TRUE)
+edbData <- select(edbData, ENGLISH.NAME, ENGLISH.ADDRESS, LONGITUDE, LATITUDE, WEBSITE)
+edbData$lats <- sapply(edbData$LATITUDE, FUN = conv)
+edbData$lngs <- sapply(edbData$LONGITUDE, FUN = conv)
+edbData$labs <- lapply(seq(nrow(edbData)), function(r) {
+  paste0("<p>", edbData[r, "ENGLISH.NAME"], "</p><p>", edbData[r, "ENGLISH.ADDRESS"], "</p>")
+})
+```
+
+# Overview
+
+This document presents the geographical distribution of kindergartens in Hong Kong. The data is sourced from the Geo-referenced public facility data from DATA.GOV.HK, collected as of July 2018.
+
+# Kindergartens in Hong Kong - Geospatial data
+
+```{r echo=FALSE}
+
+icon <- makeIcon("./kindergarten.png", iconWidth = 20, iconHeight = 20)
+
+edbData %>%
+  leaflet(width = 800, height = 800) %>%
+  addTiles() %>%
+  addMarkers(lng = ~lngs, lat = ~lats, popup = ~labs, clusterOptions = markerClusterOptions(), icon = icon)
+
+```
+
+ Source: Geo-reference public facility data, DATA.GOV.HK
+https://data.gov.hk/en-data/dataset/hk-landsd-openmap-geo-referenced-public-facility-data
